@@ -135,6 +135,7 @@
 export const PLATFORMS = {
   // Code Repositories & Version Control
   gh: 'https://github.com',
+  'api-v3': 'https://github.com/api/v3',
   gist: 'https://gist.github.com',
   gl: 'https://gitlab.com',
   gitea: 'https://gitea.com',
