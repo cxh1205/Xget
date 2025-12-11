@@ -453,6 +453,9 @@ async function handleRequest(request, env, ctx) {
                           true
                         );
                       }
+                    }
+                    else if (response.status === 401 && response.headers.get('WWW-Authenticate')==`Basic realm="GitHub"`){
+                      response = response;
                     } else {
                       const errorText = await response.text().catch(() => 'Unknown error');
                       response = createErrorResponse(
