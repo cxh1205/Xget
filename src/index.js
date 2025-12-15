@@ -12,10 +12,11 @@ import { CONFIG, createConfig } from './config/index.js';
 import { SORTED_PLATFORMS, transformPath } from './config/platforms.js';
 import { configureAIHeaders, isAIInferenceRequest } from './protocols/ai.js';
 import {
-  fetchToken,
-  handleDockerAuth,
-  parseAuthenticate,
-  responseUnauthorized
+    fetchToken,
+    getScopeFromUrl,
+    handleDockerAuth,
+    parseAuthenticate,
+    responseUnauthorized
 } from './protocols/docker.js';
 import { configureGitHeaders, isGitLFSRequest, isGitRequest } from './protocols/git.js';
 import { PerformanceMonitor, addPerformanceHeaders } from './utils/performance.js';
@@ -264,6 +265,11 @@ async function handleRequest(request, env, ctx) {
                         signal: controller.signal
                       };
 
+                      // Special handling for Docker redirects to avoid leaking Auth headers to S3 (blobs)
+                      if (isDocker) {
+                        finalFetchOptions.redirect = 'manual';
+                      }
+
                       // Special handling for HEAD requests to ensure Content-Length header
                       if (request.method === 'HEAD') {
                         response = await fetch(targetUrl, finalFetchOptions);
@@ -326,6 +332,24 @@ async function handleRequest(request, env, ctx) {
 
                       clearTimeout(timeoutId);
 
+                      // Handle manual redirect for Docker
+                      if (isDocker && (response.status === 301 || response.status === 302 || response.status === 307)) {
+                         const location = response.headers.get('Location');
+                         if (location) {
+                            // Fetch the new location without Authorization header
+                            // Cloudflare Workers fetch should follow this automatically if we used 'follow',
+                            // but we used 'manual' to strip headers.
+                            const redirectHeaders = new Headers(finalFetchOptions.headers);
+                            redirectHeaders.delete('Authorization');
+                            
+                            response = await fetch(location, {
+                              ...finalFetchOptions,
+                              headers: redirectHeaders,
+                              redirect: 'follow' // Follow subsequent redirects normally
+                            });
+                         }
+                      }
+
                       if (response.ok || response.status === 206) {
                         monitor.mark('success');
                         break;
@@ -336,35 +360,13 @@ async function handleRequest(request, env, ctx) {
                         monitor.mark('docker_auth_challenge');
 
                         const authenticateStr = response.headers.get('WWW-Authenticate');
+                        
+                        // Calculate scope for upstream token fetch
+                        let scope = getScopeFromUrl(url, effectivePath, platform);
+
                         if (authenticateStr) {
                           try {
                             const wwwAuthenticate = parseAuthenticate(authenticateStr);
-
-                            // Infer scope from the request path for container registry requests
-                            let scope = '';
-                            const pathParts = url.pathname.split('/');
-                            if (pathParts.length >= 4 && pathParts[1] === 'v2') {
-                              const platformPrefix = `/${platform.replace(/-/g, '/')}/`;
-                              if (effectivePath.startsWith(platformPrefix)) {
-                                const repoPathFull = effectivePath.slice(platformPrefix.length);
-                                const repoParts = repoPathFull.split('/');
-                                if (repoParts.length >= 1) {
-                                  let repoName = repoParts.slice(0, -2).join('/'); // Remove /manifests/tag or /blobs/sha
-
-                                  if (
-                                    platform === 'cr-docker' &&
-                                    repoName &&
-                                    !repoName.includes('/')
-                                  ) {
-                                    repoName = `library/${repoName}`;
-                                  }
-
-                                  if (repoName) {
-                                    scope = `repository:${repoName}:pull`;
-                                  }
-                                }
-                              }
-                            }
 
                             // Try to get a token for public access (without authorization)
                             const tokenResponse = await fetchToken(
@@ -378,11 +380,33 @@ async function handleRequest(request, env, ctx) {
                               if (tokenData.token) {
                                 const retryHeaders = new Headers(requestHeaders);
                                 retryHeaders.set('Authorization', `Bearer ${tokenData.token}`);
-
-                                const retryResponse = await fetch(targetUrl, {
+                                
+                                const retryOptions = {
                                   ...finalFetchOptions,
                                   headers: retryHeaders
-                                });
+                                };
+                                
+                                // Also use manual redirect for retry
+                                if (isDocker) {
+                                  retryOptions.redirect = 'manual';
+                                }
+
+                                let retryResponse = await fetch(targetUrl, retryOptions);
+
+                                // Handle manual redirect for retry
+                                if (isDocker && (retryResponse.status === 301 || retryResponse.status === 302 || retryResponse.status === 307)) {
+                                  const location = retryResponse.headers.get('Location');
+                                  if (location) {
+                                     const redirectHeaders = new Headers(retryOptions.headers);
+                                     redirectHeaders.delete('Authorization');
+                                     
+                                     retryResponse = await fetch(location, {
+                                       ...retryOptions,
+                                       headers: redirectHeaders,
+                                       redirect: 'follow'
+                                     });
+                                  }
+                                }
 
                                 if (retryResponse.ok) {
                                   response = retryResponse;
