@@ -2,10 +2,7 @@
 
 # Xget 🚀
 
-> 🗳️ **Xget 正在參加 [Gitee 2025 年度開源軟體評選](https://gitee.com/activity/2025opensource?ident=IB55NH)，請為我們投上寶貴的一票！感謝您的支援！** 🙏
-
 <a href="https://trendshift.io/repositories/14768" target="_blank"><img src="https://trendshift.io/api/badge/repositories/14768" alt="xixu-me%2FXget | Trendshift" width="250" height="55"/></a>
-<a href="https://www.producthunt.com/products/xget" target="_blank"><img src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1039008" alt="Xget | Product Hunt" width="250" height="55" /></a>
 
 [![Ask Zread](https://img.shields.io/badge/Ask_Zread-_.svg?style=flat&color=00b0aa&labelColor=000000&logo=data%3Aimage%2Fsvg%2Bxml%3Bbase64%2CPHN2ZyB3aWR0aD0iMTYiIGhlaWdodD0iMTYiIHZpZXdCb3g9IjAgMCAxNiAxNiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTQuOTYxNTYgMS42MDAxSDIuMjQxNTZDMS44ODgxIDEuNjAwMSAxLjYwMTU2IDEuODg2NjQgMS42MDE1NiAyLjI0MDFWNC45NjAxQzEuNjAxNTYgNS4zMTM1NiAxLjg4ODEgNS42MDAxIDIuMjQxNTYgNS42MDAxSDQuOTYxNTZDNS4zMTUwMiA1LjYwMDEgNS42MDE1NiA1LjMxMzU2IDUuNjAxNTYgNC45NjAxVjIuMjQwMUM1LjYwMTU2IDEuODg2NjQgNS4zMTUwMiAxLjYwMDEgNC45NjE1NiAxLjYwMDFaIiBmaWxsPSIjZmZmIi8%2BCjxwYXRoIGQ9Ik00Ljk2MTU2IDEwLjM5OTlIMi4yNDE1NkMxLjg4ODEgMTAuMzk5OSAxLjYwMTU2IDEwLjY4NjQgMS42MDE1NiAxMS4wMzk5VjEzLjc1OTlDMS42MDE1NiAxNC4xMTM0IDEuODg4MSAxNC4zOTk5IDIuMjQxNTYgMTQuMzk5OUg0Ljk2MTU2QzUuMzE1MDIgMTQuMzk5OSA1LjYwMTU2IDE0LjExMzQgNS42MDE1NiAxMy43NTk5VjExLjAzOTlDNS42MDE1NiAxMC42ODY0IDUuMzE1MDIgMTAuMzk5OSA0Ljk2MTU2IDEwLjM5OTlaIiBmaWxsPSIjZmZmIi8%2BCjxwYXRoIGQ9Ik0xMy43NTg0IDEuNjAwMUgxMS4wMzg0QzEwLjY4NSAxLjYwMDEgMTAuMzk4NCAxLjg4NjY0IDEwLjM5ODQgMi4yNDAxVjQuOTYwMUMxMC4zOTg0IDUuMzEzNTYgMTAuNjg1IDUuNjAwMSAxMS4wMzg0IDUuNjAwMUgxMy43NTg0QzE0LjExMTkgNS42MDAxIDE0LjM5ODQgNS4zMTM1NiAxNC4zOTg0IDQuOTYwMVYyLjI0MDFDMTQuMzk4NCAxLjg4NjY0IDE0LjExMTkgMS42MDAxIDEzLjc1ODQgMS42MDAxWiIgZmlsbD0iI2ZmZiIvPgo8cGF0aCBkPSJNNCAxMkwxMiA0TDQgMTJaIiBmaWxsPSIjZmZmIi8%2BCjxwYXRoIGQ9Ik00IDEyTDEyIDQiIHN0cm9rZT0iI2ZmZiIgc3Ryb2tlLXdpZHRoPSIxLjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPgo8L3N2Zz4K&logoColor=ffffff)](https://zread.ai/xixu-me/Xget)
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/xixu-me/Xget)
@@ -19,7 +16,6 @@
 [![Deno](https://img.shields.io/badge/Deno-70FFAF?&logo=deno&logoColor=black)](#部署到-deno-deploy)
 [![Docker](https://img.shields.io/badge/Docker-2496ED?&logo=docker&logoColor=white)](#自託管部署)
 [![Podman](https://img.shields.io/badge/Podman-892CA0?&logo=podman&logoColor=white)](#自託管部署)
-
 
 [English](README.md) | [汉语（简体）](README.zh-Hans.md) | **漢語（繁體）**
 
@@ -141,6 +137,83 @@
   - 本地處理，確保隱私安全
 - **下載工具相容性**：完美支援 wget、cURL、aria2、IDM 等主流下載工具
 - **CI/CD 整合**：可直接在 GitHub Actions、GitLab CI 等環境中使用
+
+## 🏗️ 系統架構
+
+### 請求處理流程
+
+```mermaid
+graph TD
+    Request[使用者請求 / User-Agent] --> Identify{識別平台}
+    Identify -->|無效| Error[返回錯誤]
+    Identify -->|有效| Transform[轉換路徑]
+
+    Transform --> CheckProtocol{檢查協定}
+
+    CheckProtocol -->|Git| GitHandler[Git 協定適配器]
+    CheckProtocol -->|Docker| DockerHandler[Docker 協定適配器]
+    CheckProtocol -->|AI| AIHandler[AI 推理適配器]
+    CheckProtocol -->|標準| StdHandler[標準適配器]
+
+    GitHandler --> Upstream[獲取上游]
+    DockerHandler --> Upstream
+    AIHandler --> Upstream
+
+    StdHandler --> CacheCheck{檢查快取}
+    CacheCheck -->|命中| ReturnCache[返回快取回應]
+    CacheCheck -->|未命中| Upstream
+
+    Upstream -->|成功| ProcessResponse[處理回應]
+    Upstream -->|失敗| Retry{重試?}
+
+    Retry -->|是| Wait["等待 (退避)"] --> Upstream
+    Retry -->|否| Error
+
+    ProcessResponse --> Finalize[添加標頭並返回]
+    Finalize --> Response[回應]
+```
+
+### 組件架構
+
+```mermaid
+classDiagram
+    class Worker {
+        +handleRequest(request)
+    }
+    class Config {
+        +PLATFORMS
+        +transformPath()
+    }
+    class Validation {
+        +validateRequest()
+        +isDockerRequest()
+    }
+    class GitProtocol {
+        +configureGitHeaders()
+        +isGitRequest()
+    }
+    class DockerProtocol {
+        +handleDockerAuth()
+        +fetchToken()
+    }
+    class AIProtocol {
+        +configureAIHeaders()
+    }
+    class Security {
+        +addSecurityHeaders()
+    }
+    class Performance {
+        +monitor()
+    }
+
+    Worker --> Config
+    Worker --> Validation
+    Worker --> GitProtocol
+    Worker --> DockerProtocol
+    Worker --> AIProtocol
+    Worker --> Security
+    Worker --> Performance
+```
 
 ## 📖 URL 轉換規則
 
@@ -2536,14 +2609,12 @@ services:
 **使用 Docker Compose:**
 
 ```bash
-docker-compose up -d
+docker compose up -d
 ```
 
 **使用 Podman Compose:**
 
 ```bash
-podman-compose up -d
-# 或者使用 podman compose (Podman 4.0+)
 podman compose up -d
 ```
 

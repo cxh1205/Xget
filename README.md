@@ -2,10 +2,7 @@
 
 # Xget 🚀
 
-> 🗳️ **Xget is participating in the [Gitee 2025 Open Source Software Awards](https://gitee.com/activity/2025opensource?ident=IB55NH). Please vote for us! Thank you for your support!** 🙏
-
 <a href="https://trendshift.io/repositories/14768" target="_blank"><img src="https://trendshift.io/api/badge/repositories/14768" alt="xixu-me%2FXget | Trendshift" width="250" height="55"/></a>
-<a href="https://www.producthunt.com/products/xget" target="_blank"><img src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1039008" alt="Xget | Product Hunt" width="250" height="55" /></a>
 
 [![Ask Zread](https://img.shields.io/badge/Ask_Zread-_.svg?style=flat&color=00b0aa&labelColor=000000&logo=data%3Aimage%2Fsvg%2Bxml%3Bbase64%2CPHN2ZyB3aWR0aD0iMTYiIGhlaWdodD0iMTYiIHZpZXdCb3g9IjAgMCAxNiAxNiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTQuOTYxNTYgMS42MDAxSDIuMjQxNTZDMS44ODgxIDEuNjAwMSAxLjYwMTU2IDEuODg2NjQgMS42MDE1NiAyLjI0MDFWNC45NjAxQzEuNjAxNTYgNS4zMTM1NiAxLjg4ODEgNS42MDAxIDIuMjQxNTYgNS42MDAxSDQuOTYxNTZDNS4zMTUwMiA1LjYwMDEgNS42MDE1NiA1LjMxMzU2IDUuNjAxNTYgNC45NjAxVjIuMjQwMUM1LjYwMTU2IDEuODg2NjQgNS4zMTUwMiAxLjYwMDEgNC45NjE1NiAxLjYwMDFaIiBmaWxsPSIjZmZmIi8%2BCjxwYXRoIGQ9Ik00Ljk2MTU2IDEwLjM5OTlIMi4yNDE1NkMxLjg4ODEgMTAuMzk5OSAxLjYwMTU2IDEwLjY4NjQgMS42MDE1NiAxMS4wMzk5VjEzLjc1OTlDMS42MDE1NiAxNC4xMTM0IDEuODg4MSAxNC4zOTk5IDIuMjQxNTYgMTQuMzk5OUg0Ljk2MTU2QzUuMzE1MDIgMTQuMzk5OSA1LjYwMTU2IDE0LjExMzQgNS42MDE1NiAxMy43NTk5VjExLjAzOTlDNS42MDE1NiAxMC42ODY0IDUuMzE1MDIgMTAuMzk5OSA0Ljk2MTU2IDEwLjM5OTlaIiBmaWxsPSIjZmZmIi8%2BCjxwYXRoIGQ9Ik0xMy43NTg0IDEuNjAwMUgxMS4wMzg0QzEwLjY4NSAxLjYwMDEgMTAuMzk4NCAxLjg4NjY0IDEwLjM5ODQgMi4yNDAxVjQuOTYwMUMxMC4zOTg0IDUuMzEzNTYgMTAuNjg1IDUuNjAwMSAxMS4wMzg0IDUuNjAwMUgxMy43NTg0QzE0LjExMTkgNS42MDAxIDE0LjM5ODQgNS4zMTM1NiAxNC4zOTg0IDQuOTYwMVYyLjI0MDFDMTQuMzk4NCAxLjg4NjY0IDE0LjExMTkgMS42MDAxIDEzLjc1ODQgMS42MDAxWiIgZmlsbD0iI2ZmZiIvPgo8cGF0aCBkPSJNNCAxMkwxMiA0TDQgMTJaIiBmaWxsPSIjZmZmIi8%2BCjxwYXRoIGQ9Ik00IDEyTDEyIDQiIHN0cm9rZT0iI2ZmZiIgc3Ryb2tlLXdpZHRoPSIxLjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPgo8L3N2Zz4K&logoColor=ffffff)](https://zread.ai/xixu-me/Xget)
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/xixu-me/Xget)
@@ -140,6 +137,83 @@ In-depth technical analysis article published: ***[Deep Dive into Xget: A High-P
   - Local processing ensures privacy and security
 - **Download Tool Compatibility**: Perfect support for wget, cURL, aria2, IDM, and other mainstream download tools
 - **CI/CD Integration**: Can be used directly in GitHub Actions, GitLab CI, and other environments
+
+## 🏗️ System Architecture
+
+### Request Processing Flow
+
+```mermaid
+graph TD
+    Request[User Request / User-Agent] --> Identify{Identify Platform}
+    Identify -->|Invalid| Error[Return Error]
+    Identify -->|Valid| Transform[Transform Path]
+
+    Transform --> CheckProtocol{Check Protocol}
+
+    CheckProtocol -->|Git| GitHandler[Git Protocol Adapter]
+    CheckProtocol -->|Docker| DockerHandler[Docker Protocol Adapter]
+    CheckProtocol -->|AI| AIHandler[AI Inference Adapter]
+    CheckProtocol -->|Standard| StdHandler[Standard Adapter]
+
+    GitHandler --> Upstream[Fetch Upstream]
+    DockerHandler --> Upstream
+    AIHandler --> Upstream
+
+    StdHandler --> CacheCheck{Check Cache}
+    CacheCheck -->|Hit| ReturnCache[Return Cached Response]
+    CacheCheck -->|Miss| Upstream
+
+    Upstream -->|Success| ProcessResponse[Process Response]
+    Upstream -->|Failure| Retry{Retry?}
+
+    Retry -->|Yes| Wait["Wait (Backoff)"] --> Upstream
+    Retry -->|No| Error
+
+    ProcessResponse --> Finalize[Add Headers & Return]
+    Finalize --> Response[Response]
+```
+
+### Component Architecture
+
+```mermaid
+classDiagram
+    class Worker {
+        +handleRequest(request)
+    }
+    class Config {
+        +PLATFORMS
+        +transformPath()
+    }
+    class Validation {
+        +validateRequest()
+        +isDockerRequest()
+    }
+    class GitProtocol {
+        +configureGitHeaders()
+        +isGitRequest()
+    }
+    class DockerProtocol {
+        +handleDockerAuth()
+        +fetchToken()
+    }
+    class AIProtocol {
+        +configureAIHeaders()
+    }
+    class Security {
+        +addSecurityHeaders()
+    }
+    class Performance {
+        +monitor()
+    }
+
+    Worker --> Config
+    Worker --> Validation
+    Worker --> GitProtocol
+    Worker --> DockerProtocol
+    Worker --> AIProtocol
+    Worker --> Security
+    Worker --> Performance
+```
 
 ## 📖 URL Conversion Rules
 
@@ -2366,7 +2440,7 @@ client = OpenAI(
 3. **Configure GitHub Secrets**:
    - Go to your GitHub repository → Settings → Secrets and variables → Actions
    - Add the following secret:
-     - `EDGEONE_PAGES_API_TOKEN`: Your API Token
+     - `EDGEONE_API_TOKEN`: Your API Token
 
 4. **Trigger deployment**:
    - The repository will automatically convert Workers code to Pages-compatible format and sync to the `pages` branch
@@ -2535,14 +2609,12 @@ services:
 **Using Docker Compose:**
 
 ```bash
-docker-compose up -d
+docker compose up -d
 ```
 
 **Using Podman Compose:**
 
 ```bash
-podman-compose up -d
-# Or use podman compose (Podman 4.0+)
 podman compose up -d
 ```
 

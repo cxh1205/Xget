@@ -2,10 +2,7 @@
 
 # Xget 🚀
 
-> 🗳️ **Xget 正在参加 [Gitee 2025 年度开源软件评选](https://gitee.com/activity/2025opensource?ident=IB55NH)，请为我们投上宝贵的一票！感谢您的支持！** 🙏
-
 <a href="https://trendshift.io/repositories/14768" target="_blank"><img src="https://trendshift.io/api/badge/repositories/14768" alt="xixu-me%2FXget | Trendshift" width="250" height="55"/></a>
-<a href="https://www.producthunt.com/products/xget" target="_blank"><img src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1039008" alt="Xget | Product Hunt" width="250" height="55" /></a>
 
 [![Ask Zread](https://img.shields.io/badge/Ask_Zread-_.svg?style=flat&color=00b0aa&labelColor=000000&logo=data%3Aimage%2Fsvg%2Bxml%3Bbase64%2CPHN2ZyB3aWR0aD0iMTYiIGhlaWdodD0iMTYiIHZpZXdCb3g9IjAgMCAxNiAxNiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTQuOTYxNTYgMS42MDAxSDIuMjQxNTZDMS44ODgxIDEuNjAwMSAxLjYwMTU2IDEuODg2NjQgMS42MDE1NiAyLjI0MDFWNC45NjAxQzEuNjAxNTYgNS4zMTM1NiAxLjg4ODEgNS42MDAxIDIuMjQxNTYgNS42MDAxSDQuOTYxNTZDNS4zMTUwMiA1LjYwMDEgNS42MDE1NiA1LjMxMzU2IDUuNjAxNTYgNC45NjAxVjIuMjQwMUM1LjYwMTU2IDEuODg2NjQgNS4zMTUwMiAxLjYwMDEgNC45NjE1NiAxLjYwMDFaIiBmaWxsPSIjZmZmIi8%2BCjxwYXRoIGQ9Ik00Ljk2MTU2IDEwLjM5OTlIMi4yNDE1NkMxLjg4ODEgMTAuMzk5OSAxLjYwMTU2IDEwLjY4NjQgMS42MDE1NiAxMS4wMzk5VjEzLjc1OTlDMS42MDE1NiAxNC4xMTM0IDEuODg4MSAxNC4zOTk5IDIuMjQxNTYgMTQuMzk5OUg0Ljk2MTU2QzUuMzE1MDIgMTQuMzk5OSA1LjYwMTU2IDE0LjExMzQgNS42MDE1NiAxMy43NTk5VjExLjAzOTlDNS42MDE1NiAxMC42ODY0IDUuMzE1MDIgMTAuMzk5OSA0Ljk2MTU2IDEwLjM5OTlaIiBmaWxsPSIjZmZmIi8%2BCjxwYXRoIGQ9Ik0xMy43NTg0IDEuNjAwMUgxMS4wMzg0QzEwLjY4NSAxLjYwMDEgMTAuMzk4NCAxLjg4NjY0IDEwLjM5ODQgMi4yNDAxVjQuOTYwMUMxMC4zOTg0IDUuMzEzNTYgMTAuNjg1IDUuNjAwMSAxMS4wMzg0IDUuNjAwMUgxMy43NTg0QzE0LjExMTkgNS42MDAxIDE0LjM5ODQgNS4zMTM1NiAxNC4zOTg0IDQuOTYwMVYyLjI0MDFDMTQuMzk4NCAxLjg4NjY0IDE0LjExMTkgMS42MDAxIDEzLjc1ODQgMS42MDAxWiIgZmlsbD0iI2ZmZiIvPgo8cGF0aCBkPSJNNCAxMkwxMiA0TDQgMTJaIiBmaWxsPSIjZmZmIi8%2BCjxwYXRoIGQ9Ik00IDEyTDEyIDQiIHN0cm9rZT0iI2ZmZiIgc3Ryb2tlLXdpZHRoPSIxLjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPgo8L3N2Zz4K&logoColor=ffffff)](https://zread.ai/xixu-me/Xget)
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/xixu-me/Xget)
@@ -140,6 +137,83 @@
   - 本地处理，确保隐私安全
 - **下载工具兼容**：完美支持 wget、cURL、aria2、IDM 等主流下载工具
 - **CI/CD 集成**：可直接在 GitHub Actions、GitLab CI 等环境中使用
+
+## 🏗️ 系统架构
+
+### 请求处理流程
+
+```mermaid
+graph TD
+    Request[用户请求 / User-Agent] --> Identify{识别平台}
+    Identify -->|无效| Error[返回错误]
+    Identify -->|有效| Transform[转换路径]
+
+    Transform --> CheckProtocol{检查协议}
+
+    CheckProtocol -->|Git| GitHandler[Git 协议适配器]
+    CheckProtocol -->|Docker| DockerHandler[Docker 协议适配器]
+    CheckProtocol -->|AI| AIHandler[AI 推理适配器]
+    CheckProtocol -->|标准| StdHandler[标准适配器]
+
+    GitHandler --> Upstream[获取上游]
+    DockerHandler --> Upstream
+    AIHandler --> Upstream
+
+    StdHandler --> CacheCheck{检查缓存}
+    CacheCheck -->|命中| ReturnCache[返回缓存响应]
+    CacheCheck -->|未命中| Upstream
+
+    Upstream -->|成功| ProcessResponse[处理响应]
+    Upstream -->|失败| Retry{重试?}
+
+    Retry -->|是| Wait["等待 (退避)"] --> Upstream
+    Retry -->|否| Error
+
+    ProcessResponse --> Finalize[添加标头并返回]
+    Finalize --> Response[响应]
+```
+
+### 组件架构
+
+```mermaid
+classDiagram
+    class Worker {
+        +handleRequest(request)
+    }
+    class Config {
+        +PLATFORMS
+        +transformPath()
+    }
+    class Validation {
+        +validateRequest()
+        +isDockerRequest()
+    }
+    class GitProtocol {
+        +configureGitHeaders()
+        +isGitRequest()
+    }
+    class DockerProtocol {
+        +handleDockerAuth()
+        +fetchToken()
+    }
+    class AIProtocol {
+        +configureAIHeaders()
+    }
+    class Security {
+        +addSecurityHeaders()
+    }
+    class Performance {
+        +monitor()
+    }
+
+    Worker --> Config
+    Worker --> Validation
+    Worker --> GitProtocol
+    Worker --> DockerProtocol
+    Worker --> AIProtocol
+    Worker --> Security
+    Worker --> Performance
+```
 
 ## 📖 URL 转换规则
 
@@ -2536,14 +2610,12 @@ services:
 **使用 Docker Compose:**
 
 ```bash
-docker-compose up -d
+docker compose up -d
 ```
 
 **使用 Podman Compose:**
 
 ```bash
-podman-compose up -d
-# 或者使用 podman compose (Podman 4.0+)
 podman compose up -d
 ```
 
