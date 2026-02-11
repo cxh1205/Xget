@@ -52,7 +52,7 @@ async function handleRequest(request, env, ctx) {
     }
     // Redirect root path or invalid platforms to GitHub repository
     else if (url.pathname === '/' || url.pathname === '') {
-      const HOME_PAGE_URL = 'https://github.com/xixu-me/Xget';
+      const HOME_PAGE_URL = 'https://github.com.qushouna.asia/xixu-me/Xget';
       response = Response.redirect(HOME_PAGE_URL, 302);
     } else {
       const validation = validateRequest(request, url, config);
@@ -95,13 +95,13 @@ async function handleRequest(request, env, ctx) {
               }) || effectivePath.split('/')[1];
 
             if (!platform || !config.PLATFORMS[platform]) {
-              const HOME_PAGE_URL = 'https://github.com/xixu-me/Xget';
+              const HOME_PAGE_URL = 'https://github.com.qushouna.asia/xixu-me/Xget';
               response = Response.redirect(HOME_PAGE_URL, 302);
             } else {
               // Check if the path only contains the platform prefix without any actual resource path
               const platformPath = `/${platform.replace(/-/g, '/')}`;
               if (effectivePath === platformPath || effectivePath === `${platformPath}/`) {
-                const HOME_PAGE_URL = 'https://github.com/xixu-me/Xget';
+                const HOME_PAGE_URL = 'https://github.com.qushouna.asia/xixu-me/Xget';
                 response = Response.redirect(HOME_PAGE_URL, 302);
               } else {
                 // Transform URL based on platform using unified logic
@@ -491,7 +491,7 @@ async function handleRequest(request, env, ctx) {
                         );
                       }
                     }
-                    else if (response.status === 401 && response.headers.get('WWW-Authenticate')==`Basic realm="GitHub"`){
+                    else if (response.status === 401 && response.headers.get('WWW-Authenticate')===`Basic realm="GitHub"`){
                       response = response;
                     } else {
                       const errorText = await response.text().catch(() => 'Unknown error');
